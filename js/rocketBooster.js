@@ -12,7 +12,7 @@ function preload() {
 var player;
 var platforms;
 var cursors;
-var snakes = [];
+var mobs = [];
 var sword;
 var fixed;
 
@@ -61,30 +61,12 @@ function create() {
   fixed.cameraOffset.x = 100;
   fixed.cameraOffset.y = 300;
 
+  player = createPlayer(game);
+  mobs = createMobs(game);
 
-  /////////// Player //////////
-  // The player and its settings
-  player = game.add.sprite(32, game.world.height - 250, 'dude');
-
-  // Follow him around
-  game.camera.follow(player);
-
-  //  We need to enable physics on the player
-  game.physics.arcade.enable(player);
-
-  //  Player physics properties. Give the little guy a slight bounce.
-  player.body.bounce.y = 0.5;
-  player.body.bounce.x = 0.5;
-  player.body.gravity.y = 500;
-  player.body.collideWorldBounds = true;
-  player.body.velocity.x = 270;
-
-  //  Our two animations, walking left and right.
-  player.animations.add('left', [0, 1, 2, 3], 10, true);
-  player.animations.add('right', [5, 6, 7, 8], 10, true);
-
+  /*
   /////////// BAD GUYS /////////////
-  // Why'd it have to be snakes?
+  // Why'd it have to be mobs?
   snakes = game.add.group();
   for(i=0; i<20; i++) {
     var snake = snakes.create(Math.random()*game.world.width, 0, 'snake');
@@ -94,6 +76,8 @@ function create() {
     snake.body.collideWorldBounds = true;
     snake.body.bounce.y = 0.5 + Math.random() * 0.5;
   }
+  */
+ 
 
   /////////// ITEMS ////////////////
   //  Finally some stars to collect
@@ -128,11 +112,11 @@ function update() {
   //  Collide all the stuff with platforms
   game.physics.arcade.collide(player, platforms);
   game.physics.arcade.collide(stars, platforms);
-  game.physics.arcade.collide(snakes, platforms);
+  game.physics.arcade.collide(mobs, platforms);
 
   //  Checks to see if the player overlaps with any of the stars, if he does call the collectStar function
   game.physics.arcade.overlap(player, stars, collectStar, null, this);
-  game.physics.arcade.overlap(player, snakes, touchSnake, null, this);
+  game.physics.arcade.overlap(player, mobs, touchSnake, null, this);
 
   if (cursors.left.isDown) {
       //  Move to the left faster
@@ -192,3 +176,44 @@ function gameOver() {
   gameStatus.text = "Game Over";
 }
 
+function createPlayer(game) {
+  // The player and its settings
+  player = game.add.sprite(32, game.world.height - 250, 'dude');
+
+  // Follow him around
+  game.camera.follow(player);
+
+  //  We need to enable physics on the player
+  game.physics.arcade.enable(player);
+
+  //  Player physics properties. Give the little guy a slight bounce.
+  player.body.bounce.y = 0.5;
+  player.body.bounce.x = 0.5;
+  player.body.gravity.y = 500;
+  player.body.collideWorldBounds = true;
+  player.body.velocity.x = 270;
+
+  //  Our two animations, walking left and right.
+  player.animations.add('left', [0, 1, 2, 3], 10, true);
+  player.animations.add('right', [5, 6, 7, 8], 10, true);
+
+  return player;
+}
+
+// Create all the bad guys
+function createMobs(game) {
+  mobs = [];
+  mobs = game.add.group();
+
+  for(i=0; i<20; i++) {
+    // Why'd it have to be snakes?
+    var snake = mobs.create(Math.random()*game.world.width, 0, 'snake');
+    game.physics.arcade.enable(snake);
+    snake.body.bounce.y = 0.5;
+    snake.body.gravity.y = 300;
+    snake.body.collideWorldBounds = true;
+    snake.body.bounce.y = 0.5 + Math.random() * 0.5;
+  }
+
+  return mobs;
+}
