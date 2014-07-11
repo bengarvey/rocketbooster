@@ -16,7 +16,7 @@ var mobs = [];
 var sword;
 var fixed;
 
-var stars;
+var items;
 var score = 0;
 var scoreText;
 var gameStatus;;
@@ -29,73 +29,13 @@ function create() {
 
   //  A simple background for our game
   game.add.sprite(0, 0, 'sky');
-
-  //  The platforms group contains the ground and the 2 ledges we can jump on
-  platforms = game.add.group();
   weapons = game.add.group();
 
-  //  We will enable physics for any object that is created in this group
-  platforms.enableBody = true;
-
-  // Who's that? Ground.
-  var ground = platforms.create(0, game.world.height - 64, 'ground');
-
-  //  Scale it to fit the width of the game world
-  ground.scale.setTo(200, 2);
-
-  //  This stops it from falling away when you jump on it
-  ground.body.immovable = true;
-
-  // Create a bunch of random ledges
-  totalLedges = 25;
-  for (i=0; i<totalLedges; i++) {
-    var x = game.world.width * Math.random();
-    var y = game.world.height * Math.random();
-    var ledge = platforms.create(x, y, 'ground');
-    ledge.scale.setTo(Math.random() * 3, Math.random() * 2);
-    ledge.body.immovable = true;
-  }
-
-  fixed = game.add.sprite(100, 100, '');
-  fixed.fixedToCamera = true;
-  fixed.cameraOffset.x = 100;
-  fixed.cameraOffset.y = 300;
-
+  fixed = createCameraFollower(game);
   player = createPlayer(game);
   mobs = createMobs(game);
-
-  /*
-  /////////// BAD GUYS /////////////
-  // Why'd it have to be mobs?
-  snakes = game.add.group();
-  for(i=0; i<20; i++) {
-    var snake = snakes.create(Math.random()*game.world.width, 0, 'snake');
-    game.physics.arcade.enable(snake);
-    snake.body.bounce.y = 0.5;
-    snake.body.gravity.y = 300;
-    snake.body.collideWorldBounds = true;
-    snake.body.bounce.y = 0.5 + Math.random() * 0.5;
-  }
-  */
- 
-
-  /////////// ITEMS ////////////////
-  //  Finally some stars to collect
-  stars = game.add.group();
-
-  //  We will enable physics for any star that is created in this group
-  stars.enableBody = true;
-
-  totalStars = 100;
-  for (var i = 0; i < totalStars; i++) {
-      //  Create a star inside of the 'stars' group
-      var star = stars.create((game.world.width/totalStars)*i, 0, 'star');
-      //  Let gravity do its thing
-      star.body.gravity.y = 90;
-
-      //  This just gives each star a slightly random bounce value
-      star.body.bounce.y = 0.7 + Math.random() * 0.8;
-  }
+  items = createItems(game);
+  platforms = createPlatforms(game);
 
   ///////////// SCORE ///////////////
   //  The score
@@ -111,11 +51,11 @@ function update() {
 
   //  Collide all the stuff with platforms
   game.physics.arcade.collide(player, platforms);
-  game.physics.arcade.collide(stars, platforms);
+  game.physics.arcade.collide(items, platforms);
   game.physics.arcade.collide(mobs, platforms);
 
-  //  Checks to see if the player overlaps with any of the stars, if he does call the collectStar function
-  game.physics.arcade.overlap(player, stars, collectStar, null, this);
+  //  Checks to see if the player overlaps with any of the items, if he does call the collectStar function
+  game.physics.arcade.overlap(player, items, collectStar, null, this);
   game.physics.arcade.overlap(player, mobs, touchSnake, null, this);
 
   if (cursors.left.isDown) {
@@ -216,4 +156,63 @@ function createMobs(game) {
   }
 
   return mobs;
+}
+
+// Create all the items the user can pick up
+function createItems(game) {
+  items = game.add.group();
+
+  //  We will enable physics for any item created in this group
+  items.enableBody = true;
+
+  totalItems = 100;
+  for (var i = 0; i < totalItems; i++) {
+      //  Create a star inside of the 'items' group
+      var star = items.create((game.world.width/totalItems)*i, 0, 'star');
+      //  Let gravity do its thing
+      star.body.gravity.y = 90;
+      //  This just gives each star a slightly random bounce value
+      star.body.bounce.y = 0.7 + Math.random() * 0.8;
+  }
+
+  return items;
+}
+
+function createPlatforms(game) {
+  //  The platforms group contains the ground and the 2 ledges we can jump on
+  platforms = game.add.group();
+
+  //  We will enable physics for any object that is created in this group
+  platforms.enableBody = true;
+
+  // Who's that? Ground.
+  var ground = platforms.create(0, game.world.height - 64, 'ground');
+
+  //  Scale it to fit the width of the game world
+  ground.scale.setTo(200, 2);
+
+  //  This stops it from falling away when you jump on it
+  ground.body.immovable = true;
+
+  // Create a bunch of random ledges
+  totalLedges = 25;
+  for (i=0; i<totalLedges; i++) {
+    var x = game.world.width * Math.random();
+    var y = game.world.height * Math.random();
+    var ledge = platforms.create(x, y, 'ground');
+    ledge.scale.setTo(Math.random() * 3, Math.random() * 2);
+    ledge.body.immovable = true;
+  }
+
+  return platforms;
+}
+
+// I think this creates an object that the camera can follow around the game world
+function createCameraFollower(game) {
+  var cameraFollower = game.add.sprite(100, 100, '');
+  cameraFollower.fixedToCamera = true;
+  cameraFollower.cameraOffset.x = 100;
+  cameraFollowe.cameraOffset.y = 300;
+
+  return cameraFollower;
 }
