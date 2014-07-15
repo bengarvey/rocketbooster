@@ -6,6 +6,8 @@ function preload() {
   game.load.image('star', 'assets/star.png');
   game.load.spritesheet('dude', 'assets/owen.png', 32, 48);
   game.load.spritesheet('snake', 'assets/snake.png', 96, 112);
+  game.load.spritesheet('baddie', 'assets/baddie.png', 32, 32);
+  game.load.spritesheet('guy', 'assets/dude.png', 32, 48);
   game.load.image('sword', 'assets/star.png');
 }
 
@@ -38,8 +40,10 @@ function create() {
   platforms = createPlatforms(game);
 
   //  The score
-  scoreText = game.add.text(16, 16, 'score: 0', { fontSize: '32px', fill: '#000' });
+  scoreText = game.add.text(16, 16, 'score: 0', { fontSize: '32px', fill: '#CCC' });
+  scoreText.fixedToCamera = true;
   gameStatus = game.add.text(500, 16, '', { fontSize: '1024px', fill: '#F00' });
+  gameStatus.fixedToCamera = true;
 
   //  Our controls
   cursors = game.input.keyboard.createCursorKeys();
@@ -74,6 +78,7 @@ function attack(attacker, attacked) {
 
 function gameOver() {
   gameStatus.text = "Game Over";
+
 }
 
 function createPlayer(game) {
@@ -105,18 +110,31 @@ function createPlayer(game) {
 function createMobs(game) {
   mobs = [];
   mobs = game.add.group();
+  mobTypes = getMobTypes();
 
   for(i=0; i<20; i++) {
-    // Why'd it have to be snakes?
-    var snake = mobs.create(Math.random()*game.world.width, 0, 'snake');
-    game.physics.arcade.enable(snake);
-    snake.body.bounce.y = 0.5;
-    snake.body.gravity.y = 300;
-    snake.body.collideWorldBounds = true;
-    snake.body.bounce.y = 0.5 + Math.random() * 0.5;
+    var mob = mobs.create(getRandomWorldX(game), 0, getMob());
+    game.physics.arcade.enable(mob);
+    mob.body.bounce.y = 0.5;
+    mob.body.gravity.y = 300;
+    mob.body.collideWorldBounds = true;
+    mob.body.bounce.y = 0.5 + Math.random() * 0.5;
   }
 
   return mobs;
+}
+
+function getMobTypes() {
+  var names = ['snake', 'baddie', 'guy'];
+  return names;
+}
+
+function getMob() {
+  mobTypes = getMobTypes();
+  totalMobs = mobTypes.length;
+  random = Math.random() * totalMobs;
+  randomIndex = Math.round(random);
+  return mobTypes[randomIndex];
 }
 
 // Create all the items the user can pick up
