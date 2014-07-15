@@ -42,7 +42,7 @@ function create() {
   //  The score
   scoreText = game.add.text(16, 16, 'score: 0', { fontSize: '32px', fill: '#CCC' });
   scoreText.fixedToCamera = true;
-  gameStatus = game.add.text(500, 16, '', { fontSize: '1024px', fill: '#F00' });
+  gameStatus = game.add.text(500, 16, '', { fontSize: '64pt', fill: '#F00' });
   gameStatus.fixedToCamera = true;
 
   //  Our controls
@@ -78,7 +78,6 @@ function attack(attacker, attacked) {
 
 function gameOver() {
   gameStatus.text = "Game Over";
-
 }
 
 function createPlayer(game) {
@@ -152,6 +151,7 @@ function createItems(game) {
       star.body.gravity.y = 90;
       //  This just gives each star a slightly random bounce value
       star.body.bounce.y = 0.7 + Math.random() * 0.8;
+      star.body.velocity.x = -20;
   }
 
   return items;
@@ -271,3 +271,7 @@ function checkAnimations(player) {
   }
 }
 
+function getRandomFromRange(range) {
+  random = (Math.random() * range) / range/2;
+  return Math.round(random);
+}
