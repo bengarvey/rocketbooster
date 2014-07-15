@@ -15,12 +15,12 @@ var cursors;
 var mobs = [];
 var sword;
 var fixed;
-
 var items;
 var score = 0;
 var scoreText;
 var gameStatus;;
 
+// Prelude to the game loop
 function create() {
   //  We're going to be using physics, so enable the Arcade Physics system
   game.physics.startSystem(Phaser.Physics.ARCADE);
@@ -46,6 +46,7 @@ function create() {
   spacebar = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR); 
 }
 
+// Our game loop
 function update() {
   checkPhysics(game);
   checkInput(cursors, spacebar, player);
