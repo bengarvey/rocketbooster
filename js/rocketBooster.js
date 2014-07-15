@@ -22,7 +22,6 @@ var scoreText;
 var gameStatus;;
 
 function create() {
-
   //  We're going to be using physics, so enable the Arcade Physics system
   game.physics.startSystem(Phaser.Physics.ARCADE);
   game.world.setBounds(0,0,10000,600);
@@ -31,67 +30,27 @@ function create() {
   game.add.sprite(0, 0, 'sky');
   weapons = game.add.group();
 
+  // Load everything
   fixed = createCameraFollower(game);
   player = createPlayer(game);
   mobs = createMobs(game);
   items = createItems(game);
   platforms = createPlatforms(game);
 
-  ///////////// SCORE ///////////////
   //  The score
   scoreText = game.add.text(16, 16, 'score: 0', { fontSize: '32px', fill: '#000' });
   gameStatus = game.add.text(500, 16, '', { fontSize: '1024px', fill: '#F00' });
 
-  //  Our controls.
+  //  Our controls
   cursors = game.input.keyboard.createCursorKeys();
   spacebar = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR); 
 }
 
 function update() {
-
-  //  Collide all the stuff with platforms
-  game.physics.arcade.collide(player, platforms);
-  game.physics.arcade.collide(items, platforms);
-  game.physics.arcade.collide(mobs, platforms);
-
-  //  Checks to see if the player overlaps with any of the items, if he does call the collectStar function
-  game.physics.arcade.overlap(player, items, collectStar, null, this);
-  game.physics.arcade.overlap(player, mobs, touchSnake, null, this);
-
-  if (cursors.left.isDown) {
-      //  Move to the left faster
-      player.body.velocity.x += -10;
-  }
-  else if (cursors.right.isDown) {
-      //  Move to the right faster
-      player.body.velocity.x += 10;
-  }
-
-  // Swordfight!
-  if (spacebar.isDown) {
-    sword = weapons.create(player.body.x+2, player.body.y, 'sword');
-  }
-  else {
-    if (sword != null) {
-      sword.kill();
-    }
-  }
-
-  // Show the correct animation sequence depending on their velocity
-  if (player.body.velocity.x > 0) {
-    player.animations.play('right');
-  }
-  else if (player.body.velocity.x < 0) {
-    player.animations.play('left');
-  }
-  else {
-    player.frame = 4;
-  }
-
-  //  Allow the player to jump, even if they are touching the ground
-  if (cursors.up.isDown || game.input.pointer1.isDown) {
-      player.body.velocity.y = -300;
-  }
+  checkPhysics(game);
+  checkInput(cursors, spacebar, player);
+  checkLimits(player);
+  checkAnimations(player);
 }
 
 function touchSnake (player, snake) {
@@ -132,6 +91,7 @@ function createPlayer(game) {
   player.body.gravity.y = 500;
   player.body.collideWorldBounds = true;
   player.body.velocity.x = 270;
+  player.body.velocity.max = 500;
 
   //  Our two animations, walking left and right.
   player.animations.add('left', [0, 1, 2, 3], 10, true);
@@ -197,8 +157,8 @@ function createPlatforms(game) {
   // Create a bunch of random ledges
   totalLedges = 25;
   for (i=0; i<totalLedges; i++) {
-    var x = game.world.width * Math.random();
-    var y = game.world.height * Math.random();
+    var x = getRandomWorldX(game);
+    var y = getRandomWorldY(game);
     var ledge = platforms.create(x, y, 'ground');
     ledge.scale.setTo(Math.random() * 3, Math.random() * 2);
     ledge.body.immovable = true;
@@ -212,7 +172,83 @@ function createCameraFollower(game) {
   var cameraFollower = game.add.sprite(100, 100, '');
   cameraFollower.fixedToCamera = true;
   cameraFollower.cameraOffset.x = 100;
-  cameraFollowe.cameraOffset.y = 300;
+  cameraFollower.cameraOffset.y = 300;
 
   return cameraFollower;
 }
+
+function getRandomWorldX(game) {
+  return Math.round(game.world.width * Math.random());
+}
+
+function getRandomWorldY(game) {
+  return Math.round(game.world.height * Math.random());
+}
+
+// Decide which game objects can interact with each other
+function checkPhysics(game) {
+  //  Collide all the stuff with platforms
+  game.physics.arcade.collide(player, platforms);
+  game.physics.arcade.collide(items, platforms);
+  game.physics.arcade.collide(mobs, platforms);
+
+  //  functions specific collisions
+  game.physics.arcade.overlap(player, items, collectStar, null, this);
+  game.physics.arcade.overlap(player, mobs, touchSnake, null, this);
+
+}
+
+// Handle User input
+function checkInput(cursors, spacebar, player) {
+  if (cursors.left.isDown) {
+    //  Move to the left faster
+    player.body.velocity.x += -50;
+  }
+  else if (cursors.right.isDown) {
+   //  Move to the right faster
+    player.body.velocity.x += 50;
+  }
+
+  //  Allow the player to jump, even if they are touching the ground
+  if (cursors.up.isDown || game.input.pointer1.isDown) {
+    player.body.velocity.y = -300;
+  }
+
+  // Swordfight!
+  if (spacebar.isDown) {
+    sword = weapons.create(player.body.x+2, player.body.y, 'sword');
+  }
+  else {
+    if (sword != null) {
+      sword.kill();
+    }
+  }
+}
+
+// Enfoce any limits on behavior
+function checkLimits(player) {
+  // Speed limit
+  if (player.body.velocity.x > player.body.velocity.max) {
+    player.body.velocity.x = player.body.velocity.max;
+  }
+  else if (player.body.velocity.x < player.body.velocity.max * -1) {
+    player.body.velocity.x = player.body.velocity.max * -1;
+  }
+
+  return player;
+
+}
+
+function checkAnimations(player) {
+  // Show the correct animation sequence depending on their velocity
+  if (player.body.velocity.x > 0) {
+    player.animations.play('right');
+  }
+  else if (player.body.velocity.x < 0) {
+    player.animations.play('left');
+  }
+  else {
+    player.frame = 4;
+  }
+}
+
