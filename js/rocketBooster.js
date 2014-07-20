@@ -9,8 +9,11 @@ function preload() {
   game.load.spritesheet('baddie', 'assets/baddie.png', 32, 32);
   game.load.spritesheet('guy', 'assets/dude.png', 32, 48);
   game.load.image('sword', 'assets/star.png');
+  game.load.image('grass', 'assets/grass.png');
+  game.load.image('cloud', 'assets/cloud.png');
 }
 
+var sky;
 var player;
 var platforms;
 var cursors;
@@ -21,6 +24,7 @@ var items;
 var score = 0;
 var scoreText;
 var gameStatus;;
+var grasses;
 
 // Prelude to the game loop
 function create() {
@@ -29,8 +33,28 @@ function create() {
   game.world.setBounds(0,0,10000,600);
 
   //  A simple background for our game
-  game.add.sprite(0, 0, 'sky');
+  sky = game.add.sprite(0, 0, 'sky');
+  sky.scale.setTo(200, 1);
   weapons = game.add.group();
+
+  grasses = game.add.group();
+  for(i=0; i<50; i++) {
+
+    scaleX = 0.25;
+    scaleY = 0.4;
+    grass = game.add.sprite(i*1024*scaleX, game.world.height-150, 'grass');
+    grass.scale.setTo(scaleX, scaleY);
+  }
+
+  clouds = game.add.group();
+  for(i=0; i<8; i++) {
+
+    scaleX = 0.25;
+    scaleY = 0.25;
+    cloud = game.add.sprite(getRandomWorldX(game), 10, 'cloud');
+    grass.scale.setTo(scaleX, scaleY);
+  }
+
 
   // Load everything
   fixed = createCameraFollower(game);
@@ -117,6 +141,7 @@ function createMobs(game) {
     mob.body.bounce.y = 0.5;
     mob.body.gravity.y = 300;
     mob.body.collideWorldBounds = true;
+    mob.body.velocity.x = Math.round(Math.random() * -250);
     mob.body.bounce.y = 0.5 + Math.random() * 0.5;
   }
 
@@ -151,7 +176,7 @@ function createItems(game) {
       star.body.gravity.y = 90;
       //  This just gives each star a slightly random bounce value
       star.body.bounce.y = 0.7 + Math.random() * 0.8;
-      star.body.velocity.x = -20;
+      star.body.velocity.x = getRandomFromRange(400);
   }
 
   return items;
@@ -173,6 +198,7 @@ function createPlatforms(game) {
   //  This stops it from falling away when you jump on it
   ground.body.immovable = true;
 
+  /*
   // Create a bunch of random ledges
   totalLedges = 25;
   for (i=0; i<totalLedges; i++) {
@@ -182,7 +208,7 @@ function createPlatforms(game) {
     ledge.scale.setTo(Math.random() * 3, Math.random() * 2);
     ledge.body.immovable = true;
   }
-
+  */
   return platforms;
 }
 
@@ -272,6 +298,6 @@ function checkAnimations(player) {
 }
 
 function getRandomFromRange(range) {
-  random = (Math.random() * range) / range/2;
+  random = (Math.random() * range) - (range/2);
   return Math.round(random);
 }
