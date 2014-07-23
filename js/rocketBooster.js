@@ -226,9 +226,9 @@ function createJetpackEmitter(game, jetpack) {
   emitter.makeParticles('star');
   emitter.setRotation(-100, 100);
   emitter.setXSpeed(0,0);
-  emitter.setYSpeed(200,350);
-  emitter.minParticleScale = 0.5;
-  emitter.maxParticleScale = 0.5;
+  emitter.setYSpeed(50,400);
+  emitter.minParticleScale = 0.1;
+  emitter.maxParticleScale = 0.6;
   emitter.setAll('body.allowGravity', true);
   return emitter;
 }
