@@ -11,6 +11,7 @@ function preload() {
   game.load.image('sword', 'assets/star.png');
   game.load.image('grass', 'assets/grass.png');
   game.load.image('cloud', 'assets/cloud.png');
+  game.load.image('jetpack', 'assets/jetpack.png');
 }
 
 var sky;
@@ -25,6 +26,8 @@ var score = 0;
 var scoreText;
 var gameStatus;;
 var grasses;
+var jetpack;
+var jetpackEmitter;
 
 // Prelude to the game loop
 function create() {
@@ -37,27 +40,13 @@ function create() {
   sky.scale.setTo(200, 1);
   weapons = game.add.group();
 
-  grasses = game.add.group();
-  for(i=0; i<50; i++) {
-
-    scaleX = 0.25;
-    scaleY = 0.4;
-    grass = game.add.sprite(i*1024*scaleX, game.world.height-150, 'grass');
-    grass.scale.setTo(scaleX, scaleY);
-  }
-
-  clouds = game.add.group();
-  for(i=0; i<8; i++) {
-
-    scaleX = 0.25;
-    scaleY = 0.25;
-    cloud = game.add.sprite(getRandomWorldX(game), 10, 'cloud');
-    grass.scale.setTo(scaleX, scaleY);
-  }
-
+  // Generate world
+  grasses = createGrass(game);
+  clouds = createClouds(game);
 
   // Load everything
-  fixed = createCameraFollower(game);
+  jetpack = createJetpack(game);
+  jetpackEmitter = createJetpackEmitter(game, jetpack);
   player = createPlayer(game);
   mobs = createMobs(game);
   items = createItems(game);
@@ -77,8 +66,20 @@ function create() {
 // Our game loop
 function update() {
   checkPhysics(game);
-  checkInput(cursors, spacebar, player);
+  checkInput(cursors, spacebar, player, jetpackEmitter);
   checkLimits(player);
+
+  if (player.alive) {
+    followPlayer(jetpack, player, -13, 0);
+  }
+  else {
+    game.physics.arcade.enable(jetpack);
+    jetpack.body.gravity.y = 500;
+    jetpack.body.velocity.x = player.body.velocity.x
+    jetpack.body.velocity.y = 30;
+
+  }
+  followSprite(jetpackEmitter, jetpack, 10, 50);
   checkAnimations(player);
 }
 
@@ -110,6 +111,7 @@ function createPlayer(game) {
 
   // Follow him around
   game.camera.follow(player);
+  game.camera.deadzone = new Phaser.Rectangle(200, 200, 300, 300);
 
   //  We need to enable physics on the player
   game.physics.arcade.enable(player);
@@ -212,14 +214,23 @@ function createPlatforms(game) {
   return platforms;
 }
 
-// I think this creates an object that the camera can follow around the game world
-function createCameraFollower(game) {
-  var cameraFollower = game.add.sprite(100, 100, '');
-  cameraFollower.fixedToCamera = true;
-  cameraFollower.cameraOffset.x = 100;
-  cameraFollower.cameraOffset.y = 300;
+function createJetpack(game) {
+  var jetpack = game.add.sprite(100, 100, 'jetpack');
+  return jetpack;
+}
 
-  return cameraFollower;
+function createJetpackEmitter(game, jetpack) {
+  var emitter = game.add.emitter(jetpack.x, jetpack.y, 1000);
+  emitter.width = 1;
+  emitter.height = 1;
+  emitter.makeParticles('star');
+  emitter.setRotation(-100, 100);
+  emitter.setXSpeed(0,0);
+  emitter.setYSpeed(200,350);
+  emitter.minParticleScale = 0.5;
+  emitter.maxParticleScale = 0.5;
+  emitter.setAll('body.allowGravity', true);
+  return emitter;
 }
 
 function getRandomWorldX(game) {
@@ -244,7 +255,7 @@ function checkPhysics(game) {
 }
 
 // Handle User input
-function checkInput(cursors, spacebar, player) {
+function checkInput(cursors, spacebar, player, jetpackEmitter) {
   if (cursors.left.isDown) {
     //  Move to the left faster
     player.body.velocity.x += -50;
@@ -257,6 +268,10 @@ function checkInput(cursors, spacebar, player) {
   //  Allow the player to jump, even if they are touching the ground
   if (cursors.up.isDown || game.input.pointer1.isDown) {
     player.body.velocity.y = -300;
+    jetpackEmitter.start(false, 10000, 0, 0, false);
+  }
+  else {
+    jetpackEmitter.start(false, 10000, 10, 0, false);
   }
 
   // Swordfight!
@@ -270,6 +285,20 @@ function checkInput(cursors, spacebar, player) {
   }
 }
 
+// Useful for clinging items to the player
+function followPlayer(follower, leader, offsetX, offsetY) {
+  directionX = leader.body.velocity.x > 1 ? 1 : -1
+  follower.x = leader.body.x + (offsetX * directionX);
+  follower.y = leader.body.y + offsetY;
+  return follower;
+}
+
+function followSprite(follower, leader, offsetX, offsetY) {
+  follower.x = leader.x + offsetX;
+  follower.y = leader.y + offsetY;
+  return follower;
+}
+
 // Enfoce any limits on behavior
 function checkLimits(player) {
   // Speed limit
@@ -281,7 +310,6 @@ function checkLimits(player) {
   }
 
   return player;
-
 }
 
 function checkAnimations(player) {
@@ -300,4 +328,28 @@ function checkAnimations(player) {
 function getRandomFromRange(range) {
   random = (Math.random() * range) - (range/2);
   return Math.round(random);
+}
+
+function createGrass(game) {
+  grasses = game.add.group();
+  for(i=0; i<50; i++) {
+
+    scaleX = 0.25;
+    scaleY = 0.4;
+    grass = game.add.sprite(i*1024*scaleX, game.world.height-150, 'grass');
+    grass.scale.setTo(scaleX, scaleY);
+  }
+
+  return grasses;
+}
+
+function createClouds(game) {
+  clouds = game.add.group();
+  for(i=0; i<8; i++) {
+    scaleX = 0.25;
+    scaleY = 0.25;
+    cloud = game.add.sprite(getRandomWorldX(game), 10, 'cloud');
+    grass.scale.setTo(scaleX, scaleY);
+  }
+  return clouds;
 }
