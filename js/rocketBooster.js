@@ -72,19 +72,14 @@ function update() {
   if (player.alive) {
     followPlayer(jetpack, player, -13, 0);
   }
-  else {
-    game.physics.arcade.enable(jetpack);
-    jetpack.body.gravity.y = 500;
-    jetpack.body.velocity.x = player.body.velocity.x
-    jetpack.body.velocity.y = 30;
 
-  }
   followSprite(jetpackEmitter, jetpack, 10, 50);
   checkAnimations(player);
 }
 
 function touchSnake (player, snake) {
   player.kill();
+  jetpack.kill();
   gameOver();
 }
 
@@ -245,6 +240,7 @@ function getRandomWorldY(game) {
 function checkPhysics(game) {
   //  Collide all the stuff with platforms
   game.physics.arcade.collide(player, platforms);
+  game.physics.arcade.collide(jetpack, platforms);
   game.physics.arcade.collide(items, platforms);
   game.physics.arcade.collide(mobs, platforms);
 
@@ -256,6 +252,12 @@ function checkPhysics(game) {
 
 // Handle User input
 function checkInput(cursors, spacebar, player, jetpackEmitter) {
+
+  if(!player.alive) {
+    jetpackEmitter.start(false, 10000, 10, 0, false);
+    return;
+  }
+
   if (cursors.left.isDown) {
     //  Move to the left faster
     player.body.velocity.x += -50;
