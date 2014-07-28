@@ -5,9 +5,9 @@ function preload() {
   game.load.image('ground', 'assets/platform.png');
   game.load.image('star', 'assets/star.png');
   game.load.spritesheet('dude', 'assets/owen.png', 32, 48);
-  game.load.spritesheet('snake', 'assets/snake.png', 96, 112);
-  game.load.spritesheet('baddie', 'assets/baddie.png', 32, 32);
-  game.load.spritesheet('guy', 'assets/dude.png', 32, 48);
+  game.load.spritesheet('snake', 'assets/snake.png', 96, 97);
+  game.load.spritesheet('bunny', 'assets/bunny.png', 29, 25);
+  game.load.spritesheet('bee', 'assets/bee.png', 73, 72);
   game.load.image('sword', 'assets/star.png');
   game.load.image('grass', 'assets/grass.png');
   game.load.image('cloud', 'assets/cloud.png');
@@ -75,6 +75,11 @@ function update() {
 
   followSprite(jetpackEmitter, jetpack, 10, 50);
   checkAnimations(player);
+  checkScore(scoreText, player);
+}
+
+function checkScore (scoreText, player) {
+  scoreText.text = 'Score: ' + Math.round(player.x/100);
 }
 
 function touchSnake (player, snake) {
@@ -88,8 +93,7 @@ function collectStar (player, star) {
   star.kill();
 
   //  Add and update the score
-  score += 10;
-  scoreText.text = 'Score: ' + score;
+  score += 100;
 }
 
 function attack(attacker, attacked) {
@@ -146,15 +150,16 @@ function createMobs(game) {
 }
 
 function getMobTypes() {
-  var names = ['snake', 'baddie', 'guy'];
+  var names = ['snake', 'bunny', 'bee'];
   return names;
 }
 
 function getMob() {
   mobTypes = getMobTypes();
   totalMobs = mobTypes.length;
-  random = Math.random() * totalMobs;
+  random = Math.random() * (totalMobs-1);
   randomIndex = Math.round(random);
+  console.log(randomIndex);
   return mobTypes[randomIndex];
 }
 
@@ -165,7 +170,7 @@ function createItems(game) {
   //  We will enable physics for any item created in this group
   items.enableBody = true;
 
-  totalItems = 100;
+  totalItems = 50;
   for (var i = 0; i < totalItems; i++) {
       //  Create a star inside of the 'items' group
       var star = items.create((game.world.width/totalItems)*i, 0, 'star');
