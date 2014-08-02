@@ -12,6 +12,13 @@ function preload() {
   game.load.image('grass', 'assets/grass.png');
   game.load.image('cloud', 'assets/cloud.png');
   game.load.image('jetpack', 'assets/jetpack.png');
+
+  game.load.image('spider', 'assets/spider.png');
+  game.load.image('tree1', 'assets/tree1.png');
+  game.load.image('tree2', 'assets/tree2.png');
+  game.load.image('tree3', 'assets/tree3.png');
+  game.load.audio('music', ['assets/space.m4a']);
+
 }
 
 var sky;
@@ -24,16 +31,25 @@ var fixed;
 var items;
 var score = 0;
 var scoreText;
+var levelText;
 var gameStatus;;
-var grasses;
 var jetpack;
 var jetpackEmitter;
+var music;
+var level = 1;
+var grasses;
+var clouds;
+
+var GRASS_LEVEL = 1;
+var FORREST_LEVEL = 2;
+
+var LEVEL_LENGTH = 10000;
 
 // Prelude to the game loop
 function create() {
   //  We're going to be using physics, so enable the Arcade Physics system
   game.physics.startSystem(Phaser.Physics.ARCADE);
-  game.world.setBounds(0,0,10000,600);
+  game.world.setBounds(0,0,LEVEL_LENGTH,600);
 
   //  A simple background for our game
   sky = game.add.sprite(0, 0, 'sky');
@@ -41,20 +57,36 @@ function create() {
   weapons = game.add.group();
 
   // Generate world
-  grasses = createGrass(game);
-  clouds = createClouds(game);
+  createWorld(game, level);
+
+  // Unload some things
+  if (mobs.length > 0) {
+    mobs.callAll('kill');
+  }
+
+  // Unload some things
+  if (typeof(items) != 'undefined') {
+    items.callAll('kill');
+  }
 
   // Load everything
   jetpack = createJetpack(game);
   jetpackEmitter = createJetpackEmitter(game, jetpack);
   player = createPlayer(game);
-  mobs = createMobs(game);
+  mobs = createMobs(game, level);
   items = createItems(game);
   platforms = createPlatforms(game);
+
+  if (level == GRASS_LEVEL) {
+    music = game.add.audio('music');
+    music.play('');
+  }
 
   //  The score
   scoreText = game.add.text(16, 16, 'score: 0', { fontSize: '32px', fill: '#CCC' });
   scoreText.fixedToCamera = true;
+  levelText = game.add.text(16, 32, 'Level 1', { fontSize: '32px', fill: '#CCC' });
+  levelText.fixedToCamera = true;
   gameStatus = game.add.text(500, 16, '', { fontSize: '64pt', fill: '#F00' });
   gameStatus.fixedToCamera = true;
 
@@ -67,7 +99,7 @@ function create() {
 function update() {
   checkPhysics(game);
   checkInput(cursors, spacebar, player, jetpackEmitter);
-  checkLimits(player);
+  checkLimits(player, game);
 
   if (player.alive) {
     followPlayer(jetpack, player, -13, 0);
@@ -75,11 +107,12 @@ function update() {
 
   followSprite(jetpackEmitter, jetpack, 10, 50);
   checkAnimations(player);
-  checkScore(scoreText, player);
+  checkScore(scoreText, levelText, player);
 }
 
-function checkScore (scoreText, player) {
+function checkScore (scoreText, levelText, player) {
   scoreText.text = 'Score: ' + Math.round(player.x/100);
+  levelText.text = 'Level: ' + level;
 }
 
 function touchSnake (player, snake) {
@@ -131,7 +164,7 @@ function createPlayer(game) {
 }
 
 // Create all the bad guys
-function createMobs(game) {
+function createMobs(game, level) {
   mobs = [];
   mobs = game.add.group();
   mobTypes = getMobTypes();
@@ -149,17 +182,16 @@ function createMobs(game) {
   return mobs;
 }
 
-function getMobTypes() {
-  var names = ['snake', 'bunny', 'bee'];
-  return names;
+function getMobTypes(level) {
+  var names = [['snake', 'bunny', 'bee'], ['spider']];
+  return names[level-1];
 }
 
 function getMob() {
-  mobTypes = getMobTypes();
+  mobTypes = getMobTypes(level);
   totalMobs = mobTypes.length;
   random = Math.random() * (totalMobs-1);
   randomIndex = Math.round(random);
-  console.log(randomIndex);
   return mobTypes[randomIndex];
 }
 
@@ -307,13 +339,18 @@ function followSprite(follower, leader, offsetX, offsetY) {
 }
 
 // Enfoce any limits on behavior
-function checkLimits(player) {
+function checkLimits(player, game) {
   // Speed limit
   if (player.body.velocity.x > player.body.velocity.max) {
     player.body.velocity.x = player.body.velocity.max;
   }
   else if (player.body.velocity.x < player.body.velocity.max * -1) {
     player.body.velocity.x = player.body.velocity.max * -1;
+  }
+
+  if (player.body.x > game.world.width-100) {
+    level++;
+    create();
   }
 
   return player;
@@ -359,4 +396,33 @@ function createClouds(game) {
     grass.scale.setTo(scaleX, scaleY);
   }
   return clouds;
+}
+
+function createTrees(game) {
+  clouds = game.add.group();
+  for(i=0; i<8; i++) {
+    scaleX = 0.25;
+    scaleY = 0.25;
+    cloud = game.add.sprite(getRandomWorldX(game), 10, getRandomTree());
+    grass.scale.setTo(scaleX, scaleY);
+  }
+  return clouds;
+}
+
+function getRandomTree() {
+  trees = ['tree1', 'tree2', 'tree3'];
+  randomIndex = Math.round(Math.random() * (trees.length-1));
+  return trees[randomIndex];
+}
+
+function createWorld(game, level) {
+
+  if (level == GRASS_LEVEL) {
+    grasses = createGrass(game);
+    clouds = createClouds(game);
+  }
+  else if (level == FORREST_LEVEL) {
+    grasses = createGrass(game);
+    clouds = createTrees(game);
+  }
 }
