@@ -59,6 +59,16 @@ function create() {
   // Generate world
   createWorld(game, level);
 
+  // Unload some things
+  if (mobs.length > 0) {
+    mobs.callAll('kill');
+  }
+
+  // Unload some things
+  if (typeof(items) != 'undefined') {
+    items.callAll('kill');
+  }
+
   // Load everything
   jetpack = createJetpack(game);
   jetpackEmitter = createJetpackEmitter(game, jetpack);
@@ -396,7 +406,6 @@ function createTrees(game) {
     cloud = game.add.sprite(getRandomWorldX(game), 10, getRandomTree());
     grass.scale.setTo(scaleX, scaleY);
   }
-  console.log(clouds);
   return clouds;
 }
 
@@ -408,9 +417,7 @@ function getRandomTree() {
 
 function createWorld(game, level) {
 
-  console.log(game, level,  GRASS_LEVEL);
   if (level == GRASS_LEVEL) {
-    console.log(level, GRASS_LEVEL);
     grasses = createGrass(game);
     clouds = createClouds(game);
   }
