@@ -13,6 +13,7 @@ function preload() {
   game.load.image('cloud', 'assets/cloud.png');
   game.load.image('jetpack', 'assets/jetpack.png');
 
+  game.load.image('darksky', 'assets/darksky.png');
   game.load.image('spider', 'assets/spider.png');
   game.load.image('tree1', 'assets/tree1.png');
   game.load.image('tree2', 'assets/tree2.png');
@@ -42,6 +43,7 @@ var clouds;
 
 var GRASS_LEVEL = 1;
 var FORREST_LEVEL = 2;
+var CAVE_LEVEL = 3;
 
 var LEVEL_LENGTH = 10000;
 var MOBS_PER_LEVEL = 20;
@@ -63,9 +65,7 @@ function create() {
   unloadAll(grasses);
   unloadAll(clouds);
 
-  //  A simple background for our game
-  sky = game.add.sprite(0, 0, 'sky');
-  sky.scale.setTo(200, 1);
+  sky = createSky();
   weapons = game.add.group();
 
   // Generate world
@@ -177,16 +177,16 @@ function createMobs(game, level) {
     game.physics.arcade.enable(mob);
     mob.body.bounce.y = 0.5;
     mob.body.gravity.y = 300;
-    mob.body.collideWorldBounds = true;
     mob.body.velocity.x = Math.round(Math.random() * -250);
     mob.body.bounce.y = 0.5 + Math.random() * 0.5;
+    mob.outOfBoundsKill = true;
   }
 
   return mobs;
 }
 
 function getMobTypes(level) {
-  var names = [['snake', 'bunny', 'bee'], ['spider']];
+  var names = [['snake', 'bee', 'bunny'], ['spider']];
   return names[level-1];
 }
 
@@ -351,6 +351,8 @@ function checkLimits(player, game) {
     player.body.velocity.x = player.body.velocity.max * -1;
   }
 
+  
+
   if (player.body.x > game.world.width-100) {
     level++;
     create();
@@ -393,8 +395,6 @@ function createGrass(game) {
 function createClouds(game) {
   clouds = game.add.group();
   for(i=0; i<8; i++) {
-    scaleX = 0.25;
-    scaleY = 0.25;
     cloud = game.add.sprite(getRandomWorldX(game), 10, 'cloud');
   }
   return clouds;
@@ -402,10 +402,11 @@ function createClouds(game) {
 
 function createTrees(game) {
   trees = game.add.group();
-  for(i=0; i<8; i++) {
-    scaleX = 0.25;
-    scaleY = 0.25;
-    tree = game.add.sprite(getRandomWorldX(game), 10, getRandomTree());
+  for(i=0; i<30; i++) {
+    scaleX = 2;
+    scaleY = 2;
+    tree = game.add.sprite(getRandomWorldX(game), 0, getRandomTree());
+    tree.scale.setTo(scaleX, scaleY);
   }
   return clouds;
 }
@@ -423,8 +424,8 @@ function createWorld(game, level) {
     clouds = createClouds(game);
   }
   else if (level == FORREST_LEVEL) {
-    grasses = createGrass(game);
     clouds = createTrees(game);
+    grasses = createGrass(game);
   }
 }
 
@@ -437,5 +438,16 @@ function unloadAll(thing) {
 function unload(thing) {
   if (typeof(thing) != 'undefined') {
     thing.kill();
+  }
+}
+
+function createSky() {
+  if (level == GRASS_LEVEL) {
+    sky = game.add.sprite(0, 0, 'sky');
+    sky.scale.setTo(200, 1);
+  }
+  else if (level == FORREST_LEVEL) {
+    sky = game.add.sprite(0, 0, 'darksky');
+    sky.scale.setTo(200, 1);
   }
 }
