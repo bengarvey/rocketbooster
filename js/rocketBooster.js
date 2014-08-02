@@ -25,7 +25,7 @@ var sky;
 var player;
 var platforms;
 var cursors;
-var mobs = [];
+var mobs;
 var sword;
 var fixed;
 var items;
@@ -44,12 +44,24 @@ var GRASS_LEVEL = 1;
 var FORREST_LEVEL = 2;
 
 var LEVEL_LENGTH = 10000;
+var MOBS_PER_LEVEL = 20;
 
 // Prelude to the game loop
 function create() {
   //  We're going to be using physics, so enable the Arcade Physics system
   game.physics.startSystem(Phaser.Physics.ARCADE);
   game.world.setBounds(0,0,LEVEL_LENGTH,600);
+
+  // If we're redoing a level, unload everything first
+  unload(sky);
+  unloadAll(mobs);
+  unloadAll(items);
+  unload(jetpack);
+  unload(jetpackEmitter);
+  unload(player);
+  unloadAll(platforms);
+  unloadAll(grasses);
+  unloadAll(clouds);
 
   //  A simple background for our game
   sky = game.add.sprite(0, 0, 'sky');
@@ -59,20 +71,11 @@ function create() {
   // Generate world
   createWorld(game, level);
 
-  // Unload some things
-  if (mobs.length > 0) {
-    mobs.callAll('kill');
-  }
-
-  // Unload some things
-  if (typeof(items) != 'undefined') {
-    items.callAll('kill');
-  }
-
   // Load everything
   jetpack = createJetpack(game);
   jetpackEmitter = createJetpackEmitter(game, jetpack);
   player = createPlayer(game);
+
   mobs = createMobs(game, level);
   items = createItems(game);
   platforms = createPlatforms(game);
@@ -169,7 +172,7 @@ function createMobs(game, level) {
   mobs = game.add.group();
   mobTypes = getMobTypes();
 
-  for(i=0; i<20; i++) {
+  for(i=0; i<MOBS_PER_LEVEL; i++) {
     var mob = mobs.create(getRandomWorldX(game), 0, getMob());
     game.physics.arcade.enable(mob);
     mob.body.bounce.y = 0.5;
@@ -393,24 +396,22 @@ function createClouds(game) {
     scaleX = 0.25;
     scaleY = 0.25;
     cloud = game.add.sprite(getRandomWorldX(game), 10, 'cloud');
-    grass.scale.setTo(scaleX, scaleY);
   }
   return clouds;
 }
 
 function createTrees(game) {
-  clouds = game.add.group();
+  trees = game.add.group();
   for(i=0; i<8; i++) {
     scaleX = 0.25;
     scaleY = 0.25;
-    cloud = game.add.sprite(getRandomWorldX(game), 10, getRandomTree());
-    grass.scale.setTo(scaleX, scaleY);
+    tree = game.add.sprite(getRandomWorldX(game), 10, getRandomTree());
   }
   return clouds;
 }
 
 function getRandomTree() {
-  trees = ['tree1', 'tree2', 'tree3'];
+  trees = ['tree1'];
   randomIndex = Math.round(Math.random() * (trees.length-1));
   return trees[randomIndex];
 }
@@ -424,5 +425,17 @@ function createWorld(game, level) {
   else if (level == FORREST_LEVEL) {
     grasses = createGrass(game);
     clouds = createTrees(game);
+  }
+}
+
+function unloadAll(thing) {
+  if (typeof(thing) != 'undefined') {
+    thing.callAll('kill');
+  }
+}
+
+function unload(thing) {
+  if (typeof(thing) != 'undefined') {
+    thing.kill();
   }
 }
