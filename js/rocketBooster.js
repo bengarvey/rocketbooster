@@ -20,6 +20,7 @@ function preload() {
   game.load.image('tree3', 'assets/tree3.png');
   game.load.audio('music', ['assets/space.m4a']);
 
+  game.load.image('blacksky', 'assets/blacksky.png');
 }
 
 var sky;
@@ -37,7 +38,7 @@ var gameStatus;;
 var jetpack;
 var jetpackEmitter;
 var music;
-var level = 1;
+var level = 3;
 var grasses;
 var clouds;
 
@@ -186,7 +187,7 @@ function createMobs(game, level) {
 }
 
 function getMobTypes(level) {
-  var names = [['snake', 'bee', 'bunny'], ['spider']];
+  var names = [['snake', 'bee', 'bunny'], ['spider'], ['bunny']];
   return names[level-1];
 }
 
@@ -234,6 +235,29 @@ function createPlatforms(game) {
 
   //  This stops it from falling away when you jump on it
   ground.body.immovable = true;
+
+  if (level == CAVE_LEVEL) {
+    // Add some random ledges near the top and bottom of the cave
+    var totalPerSide = 30;
+    for (i=0; i<totalPerSide; i++) {
+      var x = getRandomWorldX(game);
+      var y = 0;
+      var scaleY = Math.round(Math.random() * 10);
+      var top = platforms.create(x, y, 'ground');
+      top.scale.setTo(0.1, scaleY);
+      top.body.immovable = true;
+
+      x = getRandomWorldX(game);
+      y = game.world.height - Math.round(Math.random() * 300);
+      scaleY = Math.round(Math.random() * 10);
+      var bottom = platforms.create(x, y, 'ground');
+      bottom.scale.setTo(0.1, scaleY);
+      bottom.body.immovable = true;
+
+    }
+  }
+
+  console.log(platforms);
 
   /*
   // Create a bunch of random ledges
@@ -427,6 +451,9 @@ function createWorld(game, level) {
     clouds = createTrees(game);
     grasses = createGrass(game);
   }
+  else if (level == CAVE_LEVEL) {
+  }
+
 }
 
 function unloadAll(thing) {
@@ -450,4 +477,9 @@ function createSky() {
     sky = game.add.sprite(0, 0, 'darksky');
     sky.scale.setTo(200, 1);
   }
+  else if (level == CAVE_LEVEL) {
+    sky = game.add.sprite(0, 0, 'blacksky');
+    sky.scale.setTo(200, 1);
+  }
+
 }
