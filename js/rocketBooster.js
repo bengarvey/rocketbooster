@@ -1,4 +1,4 @@
-var game = new Phaser.Game(1600, 600, Phaser.AUTO, '', { preload: preload, create: create, update: update });
+var game = new Phaser.Game(800, 600, Phaser.AUTO, '', { preload: preload, create: create, update: update });
 
 function preload() {
   game.load.image('sky', 'assets/sky.png');
@@ -18,9 +18,14 @@ function preload() {
   game.load.image('tree1', 'assets/tree1.png');
   game.load.image('tree2', 'assets/tree2.png');
   game.load.image('tree3', 'assets/tree3.png');
-  game.load.audio('music', ['assets/space.m4a']);
-
+  game.load.audio('music1', ['assets/grass.m4a']);
+  game.load.audio('music2', ['assets/forrest.m4a']);
+  game.load.audio('music3', ['assets/cave.m4a']);
+  game.load.audio('music4', ['assets/cloud.m4a']);
+  game.load.audio('music5', ['assets/space.m4a']);
+ 
   game.load.image('blacksky', 'assets/blacksky.png');
+  game.load.image('greenCrystal', 'assets/greenCrystal.png');
 }
 
 var sky;
@@ -38,15 +43,17 @@ var gameStatus;;
 var jetpack;
 var jetpackEmitter;
 var music;
-var level = 3;
+var level = 1;
 var grasses;
 var clouds;
 
 var GRASS_LEVEL = 1;
 var FORREST_LEVEL = 2;
 var CAVE_LEVEL = 3;
+var CLOUD_LEVEL = 4;
+var SPACE_LEVEL = 5;
 
-var LEVEL_LENGTH = 10000;
+var LEVEL_LENGTH = 2000;
 var MOBS_PER_LEVEL = 20;
 
 // Prelude to the game loop
@@ -81,10 +88,7 @@ function create() {
   items = createItems(game);
   platforms = createPlatforms(game);
 
-  if (level == GRASS_LEVEL) {
-    music = game.add.audio('music');
-    music.play('');
-  }
+  music = resetMusic(music, level);
 
   //  The score
   scoreText = game.add.text(16, 16, 'score: 0', { fontSize: '32px', fill: '#CCC' });
@@ -96,7 +100,7 @@ function create() {
 
   //  Our controls
   cursors = game.input.keyboard.createCursorKeys();
-  spacebar = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR); 
+  spacebar = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
 }
 
 // Our game loop
@@ -120,9 +124,9 @@ function checkScore (scoreText, levelText, player) {
 }
 
 function touchSnake (player, snake) {
-  player.kill();
-  jetpack.kill();
-  gameOver();
+  //player.kill();
+  //jetpack.kill();
+  //gameOver();
 }
 
 function collectStar (player, star) {
@@ -156,7 +160,7 @@ function createPlayer(game) {
   player.body.bounce.y = 0.5;
   player.body.bounce.x = 0.5;
   player.body.gravity.y = 500;
-  player.body.collideWorldBounds = true;
+  player.body.collideWorldBounds = getCollideWorldBounds(level);
   player.body.velocity.x = 270;
   player.body.velocity.max = 500;
 
@@ -167,18 +171,27 @@ function createPlayer(game) {
   return player;
 }
 
+function getCollideWorldBounds(level) {
+  if (level == CLOUD_LEVEL || level == SPACE_LEVEL) {
+    return false;
+  }
+  else {
+    return true;
+  }
+}
+
 // Create all the bad guys
 function createMobs(game, level) {
   mobs = [];
   mobs = game.add.group();
   mobTypes = getMobTypes();
-
   for(i=0; i<MOBS_PER_LEVEL; i++) {
-    var mob = mobs.create(getRandomWorldX(game), 0, getMob());
+    var mob = mobs.create(getRandomWorldX(game), getInitialY(level, game), getMob());
     game.physics.arcade.enable(mob);
     mob.body.bounce.y = 0.5;
-    mob.body.gravity.y = 300;
-    mob.body.velocity.x = Math.round(Math.random() * -250);
+    mob.body.gravity.y = getYGravity(level);
+    mob.body.velocity.x = getXVelocity(level);
+    mob.body.velocity.y = getYVelocity(level);
     mob.body.bounce.y = 0.5 + Math.random() * 0.5;
     mob.outOfBoundsKill = true;
   }
@@ -186,8 +199,41 @@ function createMobs(game, level) {
   return mobs;
 }
 
+function getInitialY(level, game) {
+  var y = 0;
+  if (level == SPACE_LEVEL || level == CLOUD_LEVEL) {
+    y = getRandomWorldY(game);
+  }
+
+  return y;
+}
+
+function getYGravity(level) {
+  var gravity = 300;
+  if (level == SPACE_LEVEL) {
+    gravity = 0;
+  }
+  return gravity;
+}
+
+function getYVelocity(level) {
+  var velocity = 0;
+  if (level == SPACE_LEVEL) {
+    velocity = Math.round( (Math.random() * 10) - 5 );
+  }
+  return velocity;
+}
+
+function getXVelocity(level) {
+  var velocity = Math.round(Math.random() * -250);
+  if (level == SPACE_LEVEL) {
+    velocity = Math.round( (Math.random() * 10) - 5 );
+  }
+  return velocity;
+}
+
 function getMobTypes(level) {
-  var names = [['snake', 'bee', 'bunny'], ['spider'], ['bunny']];
+  var names = [['snake', 'bee', 'bunny'], ['spider'], ['bunny'], ['bunny'], ['bunny']];
   return names[level-1];
 }
 
@@ -206,27 +252,58 @@ function createItems(game) {
   //  We will enable physics for any item created in this group
   items.enableBody = true;
 
-  totalItems = 50;
-  for (var i = 0; i < totalItems; i++) {
-      //  Create a star inside of the 'items' group
-      var star = items.create((game.world.width/totalItems)*i, 0, 'star');
-      //  Let gravity do its thing
-      star.body.gravity.y = 90;
-      //  This just gives each star a slightly random bounce value
-      star.body.bounce.y = 0.7 + Math.random() * 0.8;
-      star.body.velocity.x = getRandomFromRange(400);
+  if (level == GRASS_LEVEL || level == FORREST_LEVEL) {
+    totalItems = 50;
+    for (var i = 0; i < totalItems; i++) {
+        //  Create a star inside of the 'items' group
+        var star = items.create((game.world.width/totalItems)*i, 0, 'star');
+        //  Let gravity do its thing
+        star.body.gravity.y = 90;
+        //  This just gives each star a slightly random bounce value
+        star.body.bounce.y = 0.7 + Math.random() * 0.8;
+        star.body.velocity.x = getRandomFromRange(400);
+    }
   }
+  else if (level == CAVE_LEVEL) {
+    totalItems = 50;
+    for (var i = 0; i < totalItems; i++) {
+        //  Create a star inside of the 'items' group
+        var x = getRandomWorldX(game);
+        var y = getRandomWorldY(game);
+        var crystal = items.create(x, y, 'greenCrystal');
+    }
+
+  }
+  else if (level == SPACE_LEVEL) {
+    totalItems = 50;
+    for (var i = 0; i < totalItems; i++) {
+        //  Create a star inside of the 'items' group
+        var star = items.create((game.world.width/totalItems)*i, Math.random() * game.world.height, 'star');
+        //  Let gravity do its thing
+        star.body.gravity.y = Math.round( (Math.random() * 10) - 5);
+        //  This just gives each star a slightly random bounce value
+        star.body.bounce.y = 0.7 + Math.random() * 0.8;
+        star.body.velocity.x = getRandomFromRange(30);
+    }
+  }
+  else {
+    totalItems = 50;
+    for (var i = 0; i < totalItems; i++) {
+        //  Create a star inside of the 'items' group
+        var star = items.create((game.world.width/totalItems)*i, 0, 'star');
+        //  Let gravity do its thing
+        star.body.gravity.y = 90;
+        //  This just gives each star a slightly random bounce value
+        star.body.bounce.y = 0.7 + Math.random() * 0.8;
+        star.body.velocity.x = getRandomFromRange(400);
+    }
+  }
+
 
   return items;
 }
 
-function createPlatforms(game) {
-  //  The platforms group contains the ground and the 2 ledges we can jump on
-  platforms = game.add.group();
-
-  //  We will enable physics for any object that is created in this group
-  platforms.enableBody = true;
-
+function addGround(game, platforms) {
   // Who's that? Ground.
   var ground = platforms.create(0, game.world.height - 64, 'ground');
 
@@ -236,13 +313,25 @@ function createPlatforms(game) {
   //  This stops it from falling away when you jump on it
   ground.body.immovable = true;
 
+  return platforms;
+}
+
+function createPlatforms(game) {
+  //  The platforms group contains the ground and the 2 ledges we can jump on
+  platforms = game.add.group();
+
+  //  We will enable physics for any object that is created in this group
+  platforms.enableBody = true;
+
   if (level == CAVE_LEVEL) {
+    platforms = addGround(game, platforms);
+
     // Add some random ledges near the top and bottom of the cave
     var totalPerSide = 30;
     for (i=0; i<totalPerSide; i++) {
       var x = getRandomWorldX(game);
       var y = 0;
-      var scaleY = Math.round(Math.random() * 10);
+      var scaleY = Math.round(Math.random() * 2);
       var top = platforms.create(x, y, 'ground');
       top.scale.setTo(0.1, scaleY);
       top.body.immovable = true;
@@ -256,8 +345,12 @@ function createPlatforms(game) {
 
     }
   }
+  else if (level == CLOUD_LEVEL || level == SPACE_LEVEL) {
 
-  console.log(platforms);
+  }
+  else {
+   platforms = addGround(game, platforms);
+  }
 
   /*
   // Create a bunch of random ledges
@@ -378,6 +471,7 @@ function checkLimits(player, game) {
   
 
   if (player.body.x > game.world.width-100) {
+  //if (player.body.x > 1000) {
     level++;
     create();
   }
@@ -425,18 +519,18 @@ function createClouds(game) {
 }
 
 function createTrees(game) {
-  trees = game.add.group();
-  for(i=0; i<30; i++) {
+  clouds = game.add.group();
+  for(i=0; i<40; i++) {
     scaleX = 2;
     scaleY = 2;
-    tree = game.add.sprite(getRandomWorldX(game), 0, getRandomTree());
+    tree = game.add.sprite(getRandomWorldX(game), 50, getRandomTree());
     tree.scale.setTo(scaleX, scaleY);
   }
   return clouds;
 }
 
 function getRandomTree() {
-  trees = ['tree1'];
+  trees = ['tree2'];
   randomIndex = Math.round(Math.random() * (trees.length-1));
   return trees[randomIndex];
 }
@@ -453,11 +547,13 @@ function createWorld(game, level) {
   }
   else if (level == CAVE_LEVEL) {
   }
+  else {
+  }
 
 }
 
 function unloadAll(thing) {
-  if (typeof(thing) != 'undefined') {
+  if (typeof(thing) != 'undefined' && typeof(thing.callAll()) != 'undefined') {
     thing.callAll('kill');
   }
 }
@@ -481,5 +577,30 @@ function createSky() {
     sky = game.add.sprite(0, 0, 'blacksky');
     sky.scale.setTo(200, 1);
   }
+  else if (level == CLOUD_LEVEL) {
+    sky = game.add.sprite(0, 0, 'sky');
+    sky.scale.setTo(200, 1);
+  }
+  else if (level == SPACE_LEVEL) {
+    sky = game.add.sprite(0, 0, 'blacksky');
+    sky.scale.setTo(200, 1);
+  }
+  else {
+    sky = game.add.sprite(0, 0, 'blacksky');
+    sky.scale.setTo(200, 1);
+  }
 
+
+
+}
+
+function resetMusic(music, level) {
+  if (music != undefined) {
+    music.stop();
+  }
+
+  music = game.add.audio('music' + level);
+  music.play('');
+
+  return music;
 }
