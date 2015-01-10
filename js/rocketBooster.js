@@ -8,11 +8,15 @@ function preload() {
   game.load.spritesheet('snake', 'assets/snake.png', 96, 97);
   game.load.spritesheet('bunny', 'assets/bunny.png', 29, 25);
   game.load.spritesheet('bee', 'assets/bee.png', 73, 72);
+  game.load.spritesheet('alien', 'assets/alien.png', 100, 50);
+
   game.load.image('sword', 'assets/star.png');
   game.load.image('grass', 'assets/grass.png');
   game.load.image('cloud', 'assets/cloud.png');
   game.load.image('jetpack', 'assets/jetpack.png');
 
+  game.load.image('blacksky', 'assets/blacksky.png');
+  game.load.image('spacesky', 'assets/spacesky.png');
   game.load.image('darksky', 'assets/darksky.png');
   game.load.image('spider', 'assets/spider.png');
   game.load.image('tree1', 'assets/tree1.png');
@@ -23,8 +27,7 @@ function preload() {
   game.load.audio('music3', ['assets/cave.m4a']);
   game.load.audio('music4', ['assets/cloud.m4a']);
   game.load.audio('music5', ['assets/space.m4a']);
- 
-  game.load.image('blacksky', 'assets/blacksky.png');
+
   game.load.image('greenCrystal', 'assets/greenCrystal.png');
 }
 
@@ -53,8 +56,8 @@ var CAVE_LEVEL = 3;
 var CLOUD_LEVEL = 4;
 var SPACE_LEVEL = 5;
 
-var LEVEL_LENGTH = 2000;
-var MOBS_PER_LEVEL = 20;
+var LEVEL_LENGTH = 20000;
+var MOBS_PER_LEVEL = 10;
 
 // Prelude to the game loop
 function create() {
@@ -73,7 +76,7 @@ function create() {
   unloadAll(grasses);
   unloadAll(clouds);
 
-  sky = createSky();
+  sky = createSky(level);
   weapons = game.add.group();
 
   // Generate world
@@ -124,9 +127,9 @@ function checkScore (scoreText, levelText, player) {
 }
 
 function touchSnake (player, snake) {
-  //player.kill();
-  //jetpack.kill();
-  //gameOver();
+  player.kill();
+  jetpack.kill();
+  gameOver();
 }
 
 function collectStar (player, star) {
@@ -151,7 +154,7 @@ function createPlayer(game) {
 
   // Follow him around
   game.camera.follow(player);
-  game.camera.deadzone = new Phaser.Rectangle(200, 200, 300, 300);
+  game.camera.deadzone = new Phaser.Rectangle(200, 200, 100, 100);
 
   //  We need to enable physics on the player
   game.physics.arcade.enable(player);
@@ -163,12 +166,18 @@ function createPlayer(game) {
   player.body.collideWorldBounds = getCollideWorldBounds(level);
   player.body.velocity.x = 270;
   player.body.velocity.max = 500;
-
+  player.checkWorldBounds = true;
+  player.events.onOutOfBounds.add(playerOut, player);
   //  Our two animations, walking left and right.
   player.animations.add('left', [0, 1, 2, 3], 10, true);
   player.animations.add('right', [5, 6, 7, 8], 10, true);
 
   return player;
+}
+
+function playerOut(player) {
+  player.kill();
+  gameOver();
 }
 
 function getCollideWorldBounds(level) {
@@ -186,7 +195,7 @@ function createMobs(game, level) {
   mobs = game.add.group();
   mobTypes = getMobTypes();
   for(i=0; i<MOBS_PER_LEVEL; i++) {
-    var mob = mobs.create(getRandomWorldX(game), getInitialY(level, game), getMob());
+    var mob = mobs.create(getRandomWorldX(game) + 1000, getInitialY(level, game), getMob());
     game.physics.arcade.enable(mob);
     mob.body.bounce.y = 0.5;
     mob.body.gravity.y = getYGravity(level);
@@ -210,7 +219,7 @@ function getInitialY(level, game) {
 
 function getYGravity(level) {
   var gravity = 300;
-  if (level == SPACE_LEVEL) {
+  if (level == SPACE_LEVEL || level == CLOUD_LEVEL) {
     gravity = 0;
   }
   return gravity;
@@ -227,13 +236,13 @@ function getYVelocity(level) {
 function getXVelocity(level) {
   var velocity = Math.round(Math.random() * -250);
   if (level == SPACE_LEVEL) {
-    velocity = Math.round( (Math.random() * 10) - 5 );
+    velocity = Math.round( Math.random() * -100) - 100;
   }
   return velocity;
 }
 
 function getMobTypes(level) {
-  var names = [['snake', 'bee', 'bunny'], ['spider'], ['bunny'], ['bunny'], ['bunny']];
+  var names = [['bunny'], ['snake'], ['spider'], ['bee'], ['alien']];
   return names[level-1];
 }
 
@@ -274,7 +283,7 @@ function createItems(game) {
     }
 
   }
-  else if (level == SPACE_LEVEL) {
+  else if (level == CLOUD_LEVEL || level == SPACE_LEVEL) {
     totalItems = 50;
     for (var i = 0; i < totalItems; i++) {
         //  Create a star inside of the 'items' group
@@ -303,9 +312,9 @@ function createItems(game) {
   return items;
 }
 
-function addGround(game, platforms) {
+function addGround(game, platforms, yOffset) {
   // Who's that? Ground.
-  var ground = platforms.create(0, game.world.height - 64, 'ground');
+  var ground = platforms.create(0, game.world.height - yOffset, 'ground');
 
   //  Scale it to fit the width of the game world
   ground.scale.setTo(200, 2);
@@ -324,7 +333,7 @@ function createPlatforms(game) {
   platforms.enableBody = true;
 
   if (level == CAVE_LEVEL) {
-    platforms = addGround(game, platforms);
+    platforms = addGround(game, platforms, 64);
 
     // Add some random ledges near the top and bottom of the cave
     var totalPerSide = 30;
@@ -345,11 +354,15 @@ function createPlatforms(game) {
 
     }
   }
+  else if (level == CLOUD_LEVEL) {
+    // Repurposing this for a ceiling
+    platforms = addGround(game, platforms, game.world.height + 64);
+  }
   else if (level == CLOUD_LEVEL || level == SPACE_LEVEL) {
-
+  
   }
   else {
-   platforms = addGround(game, platforms);
+   platforms = addGround(game, platforms, 64);
   }
 
   /*
@@ -420,7 +433,7 @@ function checkInput(cursors, spacebar, player, jetpackEmitter) {
     player.body.velocity.x += -50;
   }
   else if (cursors.right.isDown) {
-   //  Move to the right faster
+    //  Move to the right faster
     player.body.velocity.x += 50;
   }
 
@@ -499,7 +512,7 @@ function getRandomFromRange(range) {
 
 function createGrass(game) {
   grasses = game.add.group();
-  for(i=0; i<50; i++) {
+  for(i=0; i<75; i++) {
 
     scaleX = 0.25;
     scaleY = 0.4;
@@ -564,7 +577,8 @@ function unload(thing) {
   }
 }
 
-function createSky() {
+function createSky(level) {
+  console.log(level == SPACE_LEVEL);
   if (level == GRASS_LEVEL) {
     sky = game.add.sprite(0, 0, 'sky');
     sky.scale.setTo(200, 1);
@@ -582,15 +596,15 @@ function createSky() {
     sky.scale.setTo(200, 1);
   }
   else if (level == SPACE_LEVEL) {
-    sky = game.add.sprite(0, 0, 'blacksky');
-    sky.scale.setTo(200, 1);
+    console.log("here");
+    sky = game.add.tileSprite(0, 0, game.world.width, game.world.height, 'spacesky');
   }
   else {
-    sky = game.add.sprite(0, 0, 'blacksky');
+    sky = game.add.sprite(0, 0, 'sky');
     sky.scale.setTo(200, 1);
   }
 
-
+  return sky;
 
 }
 
