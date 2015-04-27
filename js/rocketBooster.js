@@ -49,6 +49,8 @@ var music;
 var level = 1;
 var grasses;
 var clouds;
+var title;
+var titleSprite;
 
 var GRASS_LEVEL = 1;
 var FORREST_LEVEL = 2;
@@ -75,7 +77,7 @@ function create() {
   unloadAll(platforms);
   unloadAll(grasses);
   unloadAll(clouds);
-
+  game.physics.startSystem(Phaser.Physics.ARCADE);
   sky = createSky(level);
   weapons = game.add.group();
 
@@ -101,6 +103,12 @@ function create() {
   gameStatus = game.add.text(500, 16, '', { fontSize: '64pt', fill: '#F00' });
   gameStatus.fixedToCamera = true;
 
+  // Title screen
+  title = game.add.text(800, 200, 'Rocketbooster!', {font: '48px Arial', fill: '#F33'});
+  titleSprite = this.add.sprite(800, 200, null);
+  titleSprite.addChild(title);
+  game.physics.enable(titleSprite, Phaser.Physics.ARCADE);
+  titleSprite.body.gravity.y = 0;
   //  Our controls
   cursors = game.input.keyboard.createCursorKeys();
   spacebar = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
@@ -119,6 +127,15 @@ function update() {
   followSprite(jetpackEmitter, jetpack, 10, 50);
   checkAnimations(player);
   checkScore(scoreText, levelText, player);
+  checkTitle(title, titleSprite, player);
+}
+
+function checkTitle (title, titleSprite, player) {
+  if (player.body.x > titleSprite.body.x) {
+    titleSprite.body.bounce.y = 1;
+    //titleSprite.body.gravity.y = 50;
+    titleSprite.body.collideWorldBounds = true;
+  }
 }
 
 function checkScore (scoreText, levelText, player) {
