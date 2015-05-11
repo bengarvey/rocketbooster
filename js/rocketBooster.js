@@ -50,7 +50,9 @@ var level = 1;
 var grasses;
 var clouds;
 var title;
+var titleShadow;
 var titleSprite;
+var debug;
 
 var GRASS_LEVEL = 1;
 var FORREST_LEVEL = 2;
@@ -58,7 +60,7 @@ var CAVE_LEVEL = 3;
 var CLOUD_LEVEL = 4;
 var SPACE_LEVEL = 5;
 
-var LEVEL_LENGTH = 20000;
+var LEVEL_LENGTH = 10000;
 var MOBS_PER_LEVEL = 10;
 
 // Prelude to the game loop
@@ -98,15 +100,22 @@ function create() {
   //  The score
   scoreText = game.add.text(16, 16, 'score: 0', { fontSize: '32px', fill: '#CCC' });
   scoreText.fixedToCamera = true;
-  levelText = game.add.text(16, 32, 'Level 1', { fontSize: '32px', fill: '#CCC' });
+  levelText = game.add.text(16, 40, 'Level 1', { fontSize: '32px', fill: '#CCC' });
   levelText.fixedToCamera = true;
   gameStatus = game.add.text(500, 16, '', { fontSize: '64pt', fill: '#F00' });
   gameStatus.fixedToCamera = true;
+  debug = game.add.text(16, 70, 'DEBUG', { fontSize: '14px', fill: '#CCC' });
+  debug.fixedToCamera = true;
 
   // Title screen
-  title = game.add.text(800, 200, 'Rocketbooster!', {font: '48px Arial', fill: '#F33'});
-  titleSprite = this.add.sprite(800, 200, null);
+  titleShadow = game.add.text(50, 53, 'Rocketbooster!', {font: '100px Impact', fill: '#111'});
+  title = game.add.text(50, 50, 'Rocketbooster!', {font: '100px Impact', fill: '#F33'});
+  instructions = game.add.text(50, 160, 'Collect stars to power your jetpack.', {font: '20px Arial', fill: '#FFF'});
+  titleSprite = game.add.sprite(0, 50, null);
+  titleSprite.addChild(titleShadow);
   titleSprite.addChild(title);
+  titleSprite.addChild(instructions);
+  titleSprite.fixedToCamera = true;
   game.physics.enable(titleSprite, Phaser.Physics.ARCADE);
   titleSprite.body.gravity.y = 0;
   //  Our controls
@@ -117,7 +126,7 @@ function create() {
 // Our game loop
 function update() {
   checkPhysics(game);
-  checkInput(cursors, spacebar, player, jetpackEmitter);
+  score = checkInput(cursors, spacebar, player, jetpackEmitter, score);
   checkLimits(player, game);
 
   if (player.alive) {
@@ -126,21 +135,23 @@ function update() {
 
   followSprite(jetpackEmitter, jetpack, 10, 50);
   checkAnimations(player);
-  checkScore(scoreText, levelText, player);
+  checkScore(scoreText, levelText, player, score);
   checkTitle(title, titleSprite, player);
 }
 
 function checkTitle (title, titleSprite, player) {
-  if (player.body.x > titleSprite.body.x) {
+  if (player.body.x > 1000) {
+    titleSprite.fixedToCamera = false;
     titleSprite.body.bounce.y = 1;
-    //titleSprite.body.gravity.y = 50;
-    titleSprite.body.collideWorldBounds = true;
+    titleSprite.body.gravity.y = 500;
+    titleSprite.body.collideWorldBounds = false;
   }
 }
 
-function checkScore (scoreText, levelText, player) {
-  scoreText.text = 'Score: ' + Math.round(player.x/100);
+function checkScore (scoreText, levelText, player, score) {
+  scoreText.text = 'Score: ' + score;
   levelText.text = 'Level: ' + level;
+  debug.text = 'x: ' + Math.round(player.body.x) + " y: " + Math.round(player.body.y) + " dx: " + Math.round(player.body.velocity.x) + " dy: " + Math.round(player.body.velocity.y);
 }
 
 function touchSnake (player, snake) {
@@ -437,8 +448,12 @@ function checkPhysics(game) {
 
 }
 
+function canJump(cursors, score) {
+  return ((cursors.up.isDown || game.input.pointer1.isDown) && (score > 0 || (Math.round(player.body.velocity.y) == -3 )));
+}
+
 // Handle User input
-function checkInput(cursors, spacebar, player, jetpackEmitter) {
+function checkInput(cursors, spacebar, player, jetpackEmitter, score) {
 
   if(!player.alive) {
     jetpackEmitter.start(false, 10000, 10, 0, false);
@@ -454,9 +469,10 @@ function checkInput(cursors, spacebar, player, jetpackEmitter) {
     player.body.velocity.x += 50;
   }
 
-  //  Allow the player to jump, even if they are touching the ground
-  if (cursors.up.isDown || game.input.pointer1.isDown) {
+  //  Allow the player to jump, even if they are touching the ground if they have energy
+  if (canJump(cursors, score)) {
     player.body.velocity.y = -300;
+    score += -5;
     jetpackEmitter.start(false, 10000, 0, 0, false);
   }
   else {
@@ -472,6 +488,8 @@ function checkInput(cursors, spacebar, player, jetpackEmitter) {
       sword.kill();
     }
   }
+
+  return score;
 }
 
 // Useful for clinging items to the player
