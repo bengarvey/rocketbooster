@@ -49,8 +49,7 @@ var music;
 var level = 1;
 var grasses;
 var clouds;
-var title;
-var titleShadow;
+var titleObjects;
 var titleSprite;
 var debug;
 
@@ -108,13 +107,18 @@ function create() {
   debug.fixedToCamera = true;
 
   // Title screen
-  titleShadow = game.add.text(50, 53, 'Rocketbooster!', {font: '100px Impact', fill: '#111'});
-  title = game.add.text(50, 50, 'Rocketbooster!', {font: '100px Impact', fill: '#F33'});
-  instructions = game.add.text(50, 160, 'Collect stars to power your jetpack.', {font: '20px Arial', fill: '#FFF'});
+  titleObjects = getTitleObjects(level);
+  //titleShadow = game.add.text(50, 53, 'Rocketbooster!', {font: '100px Impact', fill: '#111'});
+  //title = game.add.text(50, 50, 'Rocketbooster!', {font: '100px Impact', fill: '#F33'});
+  //instructions = game.add.text(50, 160, 'Collect stars to power your jetpack.', {font: '20px Arial', fill: '#FFF'});
   titleSprite = game.add.sprite(0, 50, null);
-  titleSprite.addChild(titleShadow);
-  titleSprite.addChild(title);
-  titleSprite.addChild(instructions);
+  //titleSprite.addChild(titleShadow);
+  //titleSprite.addChild(title);
+  //titleSprite.addChild(instructions);
+  for(var i=0; i<titleObjects.length; i++) {
+    titleSprite.addChild(titleObjects[i]);
+  }
+
   titleSprite.fixedToCamera = true;
   game.physics.enable(titleSprite, Phaser.Physics.ARCADE);
   titleSprite.body.gravity.y = 0;
@@ -136,10 +140,41 @@ function update() {
   followSprite(jetpackEmitter, jetpack, 10, 50);
   checkAnimations(player);
   checkScore(scoreText, levelText, player, score);
-  checkTitle(title, titleSprite, player);
+  checkTitle(titleSprite, player);
 }
 
-function checkTitle (title, titleSprite, player) {
+function getTitleObjects (level) {
+  var list = [];
+  var title = "Rocketbooster!";
+  var instructions = 'Collect stars to power your jetpack.';
+  var color = '#F33';
+  if (level == FORREST_LEVEL) {
+    title = 'Forrest';
+    instructions = 'Watch out for snakes!';
+    color = '#2E2';
+  }
+  else if (level == CAVE_LEVEL) {
+    title = "Cave";
+    instructions = 'Collect the gems for the next level';
+    color = '#DDF';
+  }
+  else if (level == CLOUD_LEVEL) {
+    title = "Cloud";
+    instructions = "Don't fall off the bottom of the screen!";
+    color = '#22F';
+  }
+  else if (level == SPACE_LEVEL) {
+    title = "Space";
+    instructions = 'The final level';
+    color = '#0FF';
+  }
+
+  return [game.add.text(50, 53, title, {font: '100px Impact', fill: '#111'}),
+          game.add.text(50, 50, title, {font: '100px Impact', fill: color}),
+          game.add.text(50, 160, instructions, {font: '20px Arial', fill: '#FFF'})];
+}
+
+function checkTitle (titleSprite, player) {
   if (player.body.x > 1000) {
     titleSprite.fixedToCamera = false;
     titleSprite.body.bounce.y = 1;
