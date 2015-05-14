@@ -5,6 +5,7 @@ function preload() {
   game.load.image('ground', 'assets/platform.png');
   game.load.image('star', 'assets/star.png');
   game.load.spritesheet('dude', 'assets/owen.png', 32, 48);
+  game.load.spritesheet('girl', 'assets/sasha.png', 32, 48);
   game.load.spritesheet('snake', 'assets/snake.png', 96, 97);
   game.load.spritesheet('bunny', 'assets/bunny.png', 29, 25);
   game.load.spritesheet('bee', 'assets/bee.png', 73, 72);
@@ -33,6 +34,8 @@ function preload() {
 
 var sky;
 var player;
+var player2;
+var playerType;
 var platforms;
 var cursors;
 var mobs;
@@ -92,7 +95,12 @@ function create() {
   // Load everything
   jetpack = createJetpack(game);
   jetpackEmitter = createJetpackEmitter(game, jetpack);
-  player = createPlayer(game, level);
+  startX = level == START_LEVEL ? 250 : 32;
+  playerType = playerType == null ? 'girl' : playerType;
+  player = createPlayer(game, level, playerType, startX);
+  if (level == START_LEVEL) {
+    player2 = createPlayer(game, level, 'dude', startX*2);
+  }
 
   mobs = createMobs(game, level);
   items = createItems(game);
@@ -157,7 +165,7 @@ function getLevelLength(level) {
 function getTitleObjects (level) {
   var list = [];
   var title = "Rocketbooster!";
-  var instructions = 'Collect stars to power your jetpack.';
+  var instructions = 'Choose Sasha or Owen to start!';
   var color = '#F33';
 
   if (level == GRASS_LEVEL) {
@@ -227,12 +235,13 @@ function gameOver() {
   gameStatus.text = "Game Over";
 }
 
-function createPlayer(game, level) {
+function createPlayer(game, level, type, startX) {
   // The player and its settings
-  var startX = level == START_LEVEL ? 200 : 32;
-  player = game.add.sprite(startX, game.world.height - 250, 'dude');
-
-  // Follow him around
+  var player = game.add.sprite(startX, game.world.height - 250, type);
+  player.inputEnabled = true;
+  player.input.useHandCursor = true; //if you want a hand cursor
+  player.events.onInputDown.add(choosePlayer, this);
+    // Follow him around
   game.camera.follow(player);
   game.camera.deadzone = new Phaser.Rectangle(200, 200, 100, 100);
 
@@ -251,13 +260,14 @@ function createPlayer(game, level) {
   //  Our two animations, walking left and right.
   player.animations.add('left', [0, 1, 2, 3], 10, true);
   player.animations.add('right', [5, 6, 7, 8], 10, true);
-
   return player;
 }
 
-function playerOut(player) {
-  player.kill();
-  gameOver();
+function playerOut(p) {
+  p.kill();
+  if (!player.alive) {
+    gameOver();
+  }
 }
 
 function getCollideWorldBounds(level) {
@@ -502,6 +512,7 @@ function getRandomWorldY(game) {
 function checkPhysics(game) {
   //  Collide all the stuff with platforms
   game.physics.arcade.collide(player, platforms);
+  game.physics.arcade.collide(player2, platforms);
   game.physics.arcade.collide(jetpack, platforms);
   game.physics.arcade.collide(items, platforms);
   game.physics.arcade.collide(mobs, platforms);
@@ -554,6 +565,11 @@ function checkInput(cursors, spacebar, player, jetpackEmitter, score) {
   }
 
   return score;
+}
+
+function choosePlayer(p, event) {
+  playerType = p.key;
+  player = p;
 }
 
 // Useful for clinging items to the player
