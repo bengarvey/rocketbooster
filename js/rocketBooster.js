@@ -46,27 +46,30 @@ var gameStatus;;
 var jetpack;
 var jetpackEmitter;
 var music;
-var level = 1;
+var level = 0;
 var grasses;
 var clouds;
 var titleObjects;
 var titleSprite;
 var debug;
 
+var START_LEVEL = 0;
 var GRASS_LEVEL = 1;
 var FORREST_LEVEL = 2;
 var CAVE_LEVEL = 3;
 var CLOUD_LEVEL = 4;
 var SPACE_LEVEL = 5;
 
-var LEVEL_LENGTH = 10000;
+var levelLength = 10000;
 var MOBS_PER_LEVEL = 10;
 
 // Prelude to the game loop
 function create() {
+  levelLength = getLevelLength(level);
+
   //  We're going to be using physics, so enable the Arcade Physics system
   game.physics.startSystem(Phaser.Physics.ARCADE);
-  game.world.setBounds(0,0,LEVEL_LENGTH,600);
+  game.world.setBounds(0,0,levelLength,600);
 
   // If we're redoing a level, unload everything first
   unload(sky);
@@ -89,7 +92,7 @@ function create() {
   // Load everything
   jetpack = createJetpack(game);
   jetpackEmitter = createJetpackEmitter(game, jetpack);
-  player = createPlayer(game);
+  player = createPlayer(game, level);
 
   mobs = createMobs(game, level);
   items = createItems(game);
@@ -143,12 +146,25 @@ function update() {
   checkTitle(titleSprite, player);
 }
 
+function getLevelLength(level) {
+  length = 10000;
+  if (level == START_LEVEL) {
+    length = 500;
+  }
+  return length;
+}
+
 function getTitleObjects (level) {
   var list = [];
   var title = "Rocketbooster!";
   var instructions = 'Collect stars to power your jetpack.';
   var color = '#F33';
-  if (level == FORREST_LEVEL) {
+
+  if (level == GRASS_LEVEL) {
+    title = "Grass Level!";
+    instructions = 'Collect starts to power your jetpack.';
+  }
+  else if (level == FORREST_LEVEL) {
     title = 'Forrest';
     instructions = 'Watch out for snakes!';
     color = '#2E2';
@@ -211,9 +227,10 @@ function gameOver() {
   gameStatus.text = "Game Over";
 }
 
-function createPlayer(game) {
+function createPlayer(game, level) {
   // The player and its settings
-  player = game.add.sprite(32, game.world.height - 250, 'dude');
+  var startX = level == START_LEVEL ? 200 : 32;
+  player = game.add.sprite(startX, game.world.height - 250, 'dude');
 
   // Follow him around
   game.camera.follow(player);
@@ -227,7 +244,7 @@ function createPlayer(game) {
   player.body.bounce.x = 0.5;
   player.body.gravity.y = 500;
   player.body.collideWorldBounds = getCollideWorldBounds(level);
-  player.body.velocity.x = 270;
+  player.body.velocity.x = level == START_LEVEL ? 0 : 270;
   player.body.velocity.max = 500;
   player.checkWorldBounds = true;
   player.events.onOutOfBounds.add(playerOut, player);
@@ -257,7 +274,7 @@ function createMobs(game, level) {
   mobs = [];
   mobs = game.add.group();
   mobTypes = getMobTypes();
-  for(i=0; i<MOBS_PER_LEVEL; i++) {
+  for(i=0; i<MOBS_PER_LEVEL && level != START_LEVEL; i++) {
     var mob = mobs.create(getRandomWorldX(game) + 1000, getInitialY(level, game), getMob());
     game.physics.arcade.enable(mob);
     mob.body.bounce.y = 0.5;
@@ -695,7 +712,8 @@ function resetMusic(music, level) {
     music.stop();
   }
 
-  music = game.add.audio('music' + level);
+  track = level == START_LEVEL ? 1 : level;
+  music = game.add.audio('music' + track);
   music.play('');
 
   return music;
