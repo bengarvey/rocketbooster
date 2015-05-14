@@ -83,6 +83,7 @@ function create() {
   weapons = game.add.group();
 
   // Generate world
+  platforms = createPlatforms(game);
   createWorld(game, level);
 
   // Load everything
@@ -92,7 +93,6 @@ function create() {
 
   mobs = createMobs(game, level);
   items = createItems(game);
-  platforms = createPlatforms(game);
 
   music = resetMusic(music, level);
 
@@ -395,7 +395,19 @@ function createPlatforms(game) {
   //  We will enable physics for any object that is created in this group
   platforms.enableBody = true;
 
-  if (level == CAVE_LEVEL) {
+  if (level == GRASS_LEVEL) {
+    platforms = addGround(game, platforms, 64);
+    // Add some random ledges near the top and bottom of the cave
+    var totalPerSide = 5;
+    for (i=0; i<totalPerSide; i++) {
+      var x = getRandomWorldX(game);
+      var y = game.world.height - Math.round(Math.random() * 300);
+      var scaleY = Math.round(Math.random() * 100);
+      var bottom = platforms.create(x, y, 'ground');
+      bottom.scale.setTo(0.5, scaleY);
+      bottom.body.immovable = true;
+    }
+  } else if (level == CAVE_LEVEL) {
     platforms = addGround(game, platforms, 64);
 
     // Add some random ledges near the top and bottom of the cave
@@ -586,7 +598,7 @@ function createGrass(game) {
 
     scaleX = 0.25;
     scaleY = 0.4;
-    grass = game.add.sprite(i*1024*scaleX, game.world.height-150, 'grass');
+    grass = game.add.sprite(i*1024*scaleX, game.world.height-100, 'grass');
     grass.scale.setTo(scaleX, scaleY);
   }
 
@@ -606,7 +618,7 @@ function createTrees(game) {
   for(i=0; i<40; i++) {
     scaleX = 2;
     scaleY = 2;
-    tree = game.add.sprite(getRandomWorldX(game), 50, getRandomTree());
+    tree = game.add.sprite(getRandomWorldX(game), 100, getRandomTree());
     tree.scale.setTo(scaleX, scaleY);
   }
   return clouds;
