@@ -5,6 +5,7 @@ function preload() {
   game.load.image('ground', 'assets/platform.png');
   game.load.image('star', 'assets/star.png');
   game.load.spritesheet('dude', 'assets/owen.png', 32, 48);
+  game.load.spritesheet('girl', 'assets/sasha.png', 32, 48);
   game.load.spritesheet('snake', 'assets/snake.png', 96, 97);
   game.load.spritesheet('bunny', 'assets/bunny.png', 29, 25);
   game.load.spritesheet('bee', 'assets/bee.png', 73, 72);
@@ -33,6 +34,8 @@ function preload() {
 
 var sky;
 var player;
+var player2;
+var playerType;
 var platforms;
 var cursors;
 var mobs;
@@ -46,27 +49,30 @@ var gameStatus;;
 var jetpack;
 var jetpackEmitter;
 var music;
-var level = 1;
+var level = 0;
 var grasses;
 var clouds;
 var titleObjects;
 var titleSprite;
 var debug;
 
+var START_LEVEL = 0;
 var GRASS_LEVEL = 1;
 var FORREST_LEVEL = 2;
 var CAVE_LEVEL = 3;
 var CLOUD_LEVEL = 4;
 var SPACE_LEVEL = 5;
 
-var LEVEL_LENGTH = 10000;
+var levelLength = 10000;
 var MOBS_PER_LEVEL = 10;
 
 // Prelude to the game loop
 function create() {
+  levelLength = getLevelLength(level);
+
   //  We're going to be using physics, so enable the Arcade Physics system
   game.physics.startSystem(Phaser.Physics.ARCADE);
-  game.world.setBounds(0,0,LEVEL_LENGTH,600);
+  game.world.setBounds(0,0,levelLength,600);
 
   // If we're redoing a level, unload everything first
   unload(sky);
@@ -89,7 +95,12 @@ function create() {
   // Load everything
   jetpack = createJetpack(game);
   jetpackEmitter = createJetpackEmitter(game, jetpack);
-  player = createPlayer(game);
+  startX = level == START_LEVEL ? 250 : 32;
+  playerType = playerType == null ? 'girl' : playerType;
+  player = createPlayer(game, level, playerType, startX);
+  if (level == START_LEVEL) {
+    player2 = createPlayer(game, level, 'dude', startX*2);
+  }
 
   mobs = createMobs(game, level);
   items = createItems(game);
@@ -143,12 +154,25 @@ function update() {
   checkTitle(titleSprite, player);
 }
 
+function getLevelLength(level) {
+  length = 10000;
+  if (level == START_LEVEL) {
+    length = 500;
+  }
+  return length;
+}
+
 function getTitleObjects (level) {
   var list = [];
   var title = "Rocketbooster!";
-  var instructions = 'Collect stars to power your jetpack.';
+  var instructions = 'Choose Sasha or Owen to start!';
   var color = '#F33';
-  if (level == FORREST_LEVEL) {
+
+  if (level == GRASS_LEVEL) {
+    title = "Grass Level!";
+    instructions = 'Collect starts to power your jetpack.';
+  }
+  else if (level == FORREST_LEVEL) {
     title = 'Forrest';
     instructions = 'Watch out for snakes!';
     color = '#2E2';
@@ -211,11 +235,13 @@ function gameOver() {
   gameStatus.text = "Game Over";
 }
 
-function createPlayer(game) {
+function createPlayer(game, level, type, startX) {
   // The player and its settings
-  player = game.add.sprite(32, game.world.height - 250, 'dude');
-
-  // Follow him around
+  var player = game.add.sprite(startX, game.world.height - 250, type);
+  player.inputEnabled = true;
+  player.input.useHandCursor = true; //if you want a hand cursor
+  player.events.onInputDown.add(choosePlayer, this);
+    // Follow him around
   game.camera.follow(player);
   game.camera.deadzone = new Phaser.Rectangle(200, 200, 100, 100);
 
@@ -227,20 +253,21 @@ function createPlayer(game) {
   player.body.bounce.x = 0.5;
   player.body.gravity.y = 500;
   player.body.collideWorldBounds = getCollideWorldBounds(level);
-  player.body.velocity.x = 270;
+  player.body.velocity.x = level == START_LEVEL ? 0 : 270;
   player.body.velocity.max = 500;
   player.checkWorldBounds = true;
   player.events.onOutOfBounds.add(playerOut, player);
   //  Our two animations, walking left and right.
   player.animations.add('left', [0, 1, 2, 3], 10, true);
   player.animations.add('right', [5, 6, 7, 8], 10, true);
-
   return player;
 }
 
-function playerOut(player) {
-  player.kill();
-  gameOver();
+function playerOut(p) {
+  p.kill();
+  if (!player.alive) {
+    gameOver();
+  }
 }
 
 function getCollideWorldBounds(level) {
@@ -257,7 +284,7 @@ function createMobs(game, level) {
   mobs = [];
   mobs = game.add.group();
   mobTypes = getMobTypes();
-  for(i=0; i<MOBS_PER_LEVEL; i++) {
+  for(i=0; i<MOBS_PER_LEVEL && level != START_LEVEL; i++) {
     var mob = mobs.create(getRandomWorldX(game) + 1000, getInitialY(level, game), getMob());
     game.physics.arcade.enable(mob);
     mob.body.bounce.y = 0.5;
@@ -485,6 +512,7 @@ function getRandomWorldY(game) {
 function checkPhysics(game) {
   //  Collide all the stuff with platforms
   game.physics.arcade.collide(player, platforms);
+  game.physics.arcade.collide(player2, platforms);
   game.physics.arcade.collide(jetpack, platforms);
   game.physics.arcade.collide(items, platforms);
   game.physics.arcade.collide(mobs, platforms);
@@ -537,6 +565,11 @@ function checkInput(cursors, spacebar, player, jetpackEmitter, score) {
   }
 
   return score;
+}
+
+function choosePlayer(p, event) {
+  playerType = p.key;
+  player = p;
 }
 
 // Useful for clinging items to the player
@@ -695,7 +728,8 @@ function resetMusic(music, level) {
     music.stop();
   }
 
-  music = game.add.audio('music' + level);
+  track = level == START_LEVEL ? 1 : level;
+  music = game.add.audio('music' + track);
   music.play('');
 
   return music;
