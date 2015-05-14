@@ -173,22 +173,22 @@ function getTitleObjects (level) {
     instructions = 'Collect starts to power your jetpack.';
   }
   else if (level == FORREST_LEVEL) {
-    title = 'Forrest';
+    title = 'Forrest Level!';
     instructions = 'Watch out for snakes!';
     color = '#2E2';
   }
   else if (level == CAVE_LEVEL) {
-    title = "Cave";
+    title = "Cave Level!";
     instructions = 'Collect the gems for the next level';
     color = '#DDF';
   }
   else if (level == CLOUD_LEVEL) {
-    title = "Cloud";
+    title = "Cloud Level!";
     instructions = "Don't fall off the bottom of the screen!";
     color = '#22F';
   }
   else if (level == SPACE_LEVEL) {
-    title = "Space";
+    title = "Space Level!";
     instructions = 'The final level';
     color = '#0FF';
   }
@@ -570,6 +570,8 @@ function checkInput(cursors, spacebar, player, jetpackEmitter, score) {
 function choosePlayer(p, event) {
   playerType = p.key;
   player = p;
+  level = GRASS_LEVEL;
+  create();
 }
 
 // Useful for clinging items to the player
