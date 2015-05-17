@@ -216,6 +216,8 @@ function checkScore (scoreText, levelText, player, score) {
 function touchSnake (player, snake) {
   player.kill();
   jetpack.kill();
+  //player.body.velocity.x = 0;
+  //player.body.velocity.y = 0;
   gameOver();
 }
 
@@ -233,9 +235,22 @@ function attack(attacker, attacked) {
 
 function gameOver() {
   gameStatus.text = "Game Over";
+  restartGame();
+}
+
+function restartGame() {
+  level = GRASS_LEVEL;
+  player.alive = true;
+  player.exists = true;
+  player.visible = true;
+  jetpack.alive = true;
+  jetpack.exists = true;
+  jetpack.visible = true;
+  create();
 }
 
 function createPlayer(game, level, type, startX) {
+  //player.body.x = 32;
   // The player and its settings
   var player = game.add.sprite(startX, game.world.height - 250, type);
   player.inputEnabled = true;
@@ -248,6 +263,7 @@ function createPlayer(game, level, type, startX) {
   //  We need to enable physics on the player
   game.physics.arcade.enable(player);
 
+  player.body.x = 32;
   //  Player physics properties. Give the little guy a slight bounce.
   player.body.bounce.y = 0.5;
   player.body.bounce.x = 0.5;
@@ -598,10 +614,7 @@ function checkLimits(player, game) {
     player.body.velocity.x = player.body.velocity.max * -1;
   }
 
-  
-
   if (player.body.x > game.world.width-100) {
-  //if (player.body.x > 1000) {
     level++;
     create();
   }
